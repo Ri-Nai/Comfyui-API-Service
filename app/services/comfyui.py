@@ -127,7 +127,7 @@ class ComfyUIService:
         await self.ensure_ws_connected()
         
         try:
-            async with asyncio.timeout(self.timeout):
+            async def _wait_for_completion():
                 while True:
                     try:
                         message = await self.ws.recv()
@@ -159,6 +159,8 @@ class ComfyUIService:
                             
                     except websockets.WebSocketException as e:
                         raise RuntimeError(f"WebSocket错误: {str(e)}")
+
+            await asyncio.wait_for(_wait_for_completion(), timeout=self.timeout)
                         
         except asyncio.TimeoutError:
             raise TimeoutError(f"等待提示 {prompt_id} 执行超时")
