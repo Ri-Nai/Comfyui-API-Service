@@ -22,14 +22,12 @@ class ComfyUIService:
 
     async def ensure_ws_connected(self):
         """确保 WebSocket 连接已建立"""
-        if self.ws is None or not self.ws.open:
-            self.ws = await websockets.connect(f"ws://{self.server}/ws?clientId={self.client_id}")
+        self.ws = await websockets.connect(f"ws://{self.server}/ws?clientId={self.client_id}")
 
     async def close_ws(self):
         """关闭 WebSocket 连接"""
-        if self.ws and self.ws.open:
-            await self.ws.close()
-            self.ws = None
+        await self.ws.close()
+        self.ws = None
 
 
     async def upload_image(self, image_data: bytes, filename: str) -> str:
