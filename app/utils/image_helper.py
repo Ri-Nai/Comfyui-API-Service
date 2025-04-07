@@ -3,6 +3,8 @@ import io
 from pathlib import Path
 from PIL import Image
 import os
+import uuid
+from typing import Tuple
 
 class ImageHelper:
     @staticmethod
@@ -53,3 +55,19 @@ class ImageHelper:
         
         # 生成文件名
         return str(output_path / filename) 
+    
+    @staticmethod
+    def decode_image(base64_str: str) -> Tuple[bytes, str]:
+        try:
+            image_data = base64.b64decode(base64_str)
+            # 使用PIL验证图片数据
+            image = Image.open(io.BytesIO(image_data))
+            # 重新编码为PNG格式
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+            
+            filename = f"input_{uuid.uuid4()}.png"
+            return img_byte_arr, filename
+        except Exception as e:
+            raise Exception(f"解码图片失败: {str(e)}")

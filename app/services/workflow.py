@@ -187,6 +187,27 @@ class TextConcatenate(BaseNode):
     clean_whitespace: bool = True
     class_name: str = "Text Concatenate"
 
+def create_tagger_workflow(
+    input_image: str,
+) -> Dict[str, Any]:
+    nodes = {}
+    node_counter = 0
+
+    def create_node(func, **kwargs):
+        nonlocal node_counter
+        node_counter += 1
+        node = func(**kwargs)
+        setattr(node, "id", str(node_counter))
+        nodes[str(node_counter)] = node
+        return node
+    
+    load_image = create_node(LoadImage, image=input_image)
+    tagger = create_node(WD14TaggerPysssss)
+    link(load_image, 0, tagger, "image")
+
+    nodes = {k: v.to_dict() for k, v in nodes.items()}
+    return nodes
+
 
 def create_style_transfer_workflow(
     input_image: str,
@@ -239,16 +260,9 @@ def create_style_transfer_workflow(
         link(final_output_model, 1, lora, "clip")
         final_output_model = lora
 
-    style_text = create_node(TextMultiline, text=positive_prompt)
+    positive_text = create_node(TextMultiline, text=positive_prompt)
 
     negative_text = create_node(TextMultiline, text=negative_prompt)
-
-    tagger = create_node(WD14TaggerPysssss)
-    link(load_image, 0, tagger, "image")
-
-    concatenate = create_node(TextConcatenate)
-    link(style_text, 0, concatenate, "text_a")
-    link(tagger, 0, concatenate, "text_b")
 
     positive_encode = create_node(
         CLIPTextEncodeSDXL,
@@ -257,8 +271,8 @@ def create_style_transfer_workflow(
         target_width=image_width,
         target_height=image_height,
     )
-    link(concatenate, 0, positive_encode, "text_g")
-    link(concatenate, 0, positive_encode, "text_l")
+    link(positive_text, 0, positive_encode, "text_g")
+    link(positive_text, 0, positive_encode, "text_l")
     link(final_output_model, 1, positive_encode, "clip")
 
     negative_encode = create_node(CLIPTextEncode)

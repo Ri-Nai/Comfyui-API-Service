@@ -2,12 +2,12 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 class WorkflowRequest(BaseModel):
-    input_image: str  # base64编码的图片数据
-    positive_prompt: str
-    negative_prompt: str
-    checkpoint_name: str
-    controlnet_name: str
-    lora_names: List[str]
+    input_image: Optional[str] = None  # base64编码的图片数据
+    positive_prompt: Optional[str] = None
+    negative_prompt: Optional[str] = None
+    checkpoint_name: Optional[str] = None
+    controlnet_name: Optional[str] = None
+    lora_names: Optional[List[str]] = None
     seed: Optional[int] = None
     steps: Optional[int] = 20
     cfg: Optional[float] = 6.5

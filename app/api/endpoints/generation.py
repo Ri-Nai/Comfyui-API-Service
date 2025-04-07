@@ -8,7 +8,7 @@ import io
 from app.models.requests import WorkflowRequest
 from app.services.comfyui import ComfyUIService
 from app.services.workflow import create_style_transfer_workflow
-
+from app.utils.image_helper import ImageHelper
 logger = logging.getLogger(__name__)
 router = APIRouter()
 comfyui_service = ComfyUIService()
@@ -20,15 +20,7 @@ async def generate_image(request: WorkflowRequest):
         
         # 解码base64图片数据
         try:
-            image_data = base64.b64decode(request.input_image)
-            # 使用PIL验证图片数据
-            image = Image.open(io.BytesIO(image_data))
-            # 重新编码为PNG格式
-            img_byte_arr = io.BytesIO()
-            image.save(img_byte_arr, format='PNG')
-            img_byte_arr = img_byte_arr.getvalue()
-            
-            filename = f"input_{uuid.uuid4()}.png"
+            img_byte_arr, filename = ImageHelper.decode_image(request.input_image)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid image data: {str(e)}")
 
@@ -66,14 +58,14 @@ async def generate_image(request: WorkflowRequest):
         logger.info(f"成功提交提示，ID: {prompt_id}")
 
         # 等待生成完成
-        await comfyui_service.wait_for_prompt(prompt_id)
+        outputs = await comfyui_service.wait_for_prompt(prompt_id)
 
         # 获取生成历史
         history = await comfyui_service.get_history(prompt_id)
         logger.info(f"成功获取历史记录，提示ID: {prompt_id}")
 
         # 处理输出
-        output_images = await comfyui_service.process_output(prompt_id, history)
+        output_images = await comfyui_service.process_output_images(outputs)
 
         return {
             "status": "success",
