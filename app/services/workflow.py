@@ -31,7 +31,11 @@ class BaseNode:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "inputs": {k: v for k, v in asdict(self).items() if k != "id"},
-            "class_type": self.__class__.__name__,
+            "class_type": (
+                self.class_name
+                if hasattr(self, "class_name")
+                else self.__class__.__name__
+            ),
         }
 
 
@@ -143,9 +147,50 @@ class LoraLoader(BaseNode):
     clip: Optional[List[int]] = None
 
 
+@dataclass
+class CLIPTextEncodeSDXL(BaseNode):
+    width: int
+    height: int
+    target_width: int
+    target_height: int
+    clip: Optional[List[int]] = None
+    text_g: Optional[str] = None
+    text_l: Optional[str] = None
+    crop_w: int = 0
+    crop_h: int = 0
+
+
+@dataclass
+class WD14TaggerPysssss(BaseNode):
+    model: str = "wd-v1-4-moat-tagger-v2"
+    threshold: float = 0.35
+    character_threshold: float = 0.85
+    replace_underscore: bool = False
+    trailing_comma: bool = False
+    exclude_tags: str = ""
+    tags: str = ""
+    image: Optional[List[int]] = None
+    class_name: str = "WD14Tagger|pysssss"
+
+
+@dataclass
+class TextMultiline(BaseNode):
+    text: str
+    class_name: str = "Text Multiline"
+
+
+@dataclass
+class TextConcatenate(BaseNode):
+    text_a: Optional[str] = None
+    text_b: Optional[str] = None
+    delimiter: str = ", "
+    clean_whitespace: bool = True
+    class_name: str = "Text Concatenate"
+
+
 def create_style_transfer_workflow(
     input_image: str,
-    positive_prompt: str,
+    style_prompt: str,
     negative_prompt: str,
     checkpoint_name: str,
     controlnet_name: str,
@@ -161,22 +206,9 @@ def create_style_transfer_workflow(
     controlnet_start_percent: float = 0,
     controlnet_end_percent: float = 1,
     output_prefix: str = "StyleTransfer",
-    image_width: int = 512,
-    image_height: int = 512,
+    image_width: int = 1024,
+    image_height: int = 1024,
 ) -> Dict[str, Any]:
-    """
-    创建一个风格迁移的workflow配置
-
-    Args:
-        input_image: 输入图像的文件名
-        positive_prompt: 正向提示词
-        negative_prompt: 负向提示词
-        seed: 随机种子，如果为None则随机生成
-        output_prefix: 输出文件名前缀
-
-    Returns:
-        Dict[str, Any]: workflow配置的JSON字典
-    """
     nodes = {}
     node_counter = 0
 
@@ -207,28 +239,30 @@ def create_style_transfer_workflow(
         link(final_output_model, 1, lora, "clip")
         final_output_model = lora
 
-    # CLIP文本编码
-    positive_encode = create_node(CLIPTextEncode, text=positive_prompt)
-    link(final_output_model, 1, positive_encode, "clip")
+    style_text = create_node(TextMultiline, text=style_prompt)
 
-    # CLIP文本编码
-    negative_encode = create_node(CLIPTextEncode, text=negative_prompt)
-    link(final_output_model, 1, negative_encode, "clip")
+    negative_text = create_node(TextMultiline, text=negative_prompt)
 
-    # 图像处理
-    image_scale = create_node(
-        ImageScale,
-        upscale_method="nearest-exact",
+    tagger = create_node(WD14TaggerPysssss)
+
+    concatenate = create_node(TextConcatenate)
+    link(style_text, 0, concatenate, "text_a")
+    link(tagger, 0, concatenate, "text_b")
+
+    positive_encode = create_node(
+        CLIPTextEncodeSDXL,
         width=image_width,
         height=image_height,
-        crop="disabled",
+        target_width=image_width,
+        target_height=image_height,
     )
-    link(load_image, 0, image_scale, "image")
+    link(concatenate, 0, positive_encode, "text_g")
+    link(concatenate, 0, positive_encode, "text_l")
+    link(final_output_model, 1, positive_encode, "clip")
 
-    vae_encode = create_node(VAEEncode)
-    link(image_scale, 0, vae_encode, "pixels")
-    link(checkpoint_loader, 2, vae_encode, "vae")
-
+    negative_encode = create_node(CLIPTextEncode)
+    link(negative_text, 0, negative_encode, "text")
+    link(final_output_model, 1, negative_encode, "clip")
     controlnet_apply = create_node(
         ControlNetApplySD3,
         strength=controlnet_strength,
@@ -241,9 +275,9 @@ def create_style_transfer_workflow(
     link(checkpoint_loader, 2, controlnet_apply, "vae")
     link(load_image, 0, controlnet_apply, "image")
 
-    # KSampler
-    if seed is None:
-        seed = random.randint(1, 1000000000000000)
+    vae_encode = create_node(VAEEncode)
+    link(load_image, 0, vae_encode, "pixels")
+    link(checkpoint_loader, 2, vae_encode, "vae")
 
     ksampler = create_node(
         KSampler,
@@ -259,12 +293,10 @@ def create_style_transfer_workflow(
     link(controlnet_apply, 1, ksampler, "negative")
     link(vae_encode, 0, ksampler, "latent_image")
 
-    # VAE解码
     vae_decode = create_node(VAEDecode)
     link(ksampler, 0, vae_decode, "samples")
     link(checkpoint_loader, 2, vae_decode, "vae")
 
-    # 保存图像
     save_image = create_node(SaveImage, filename_prefix=output_prefix)
     link(vae_decode, 0, save_image, "images")
 
@@ -275,7 +307,7 @@ def create_style_transfer_workflow(
 if __name__ == "__main__":
     nodes = create_style_transfer_workflow(
         input_image="input_image.png",
-        positive_prompt="positive_prompt",
+        style_prompt="style_prompt",
         negative_prompt="negative_prompt",
         checkpoint_name="checkpoint_name",
         controlnet_name="controlnet_name",
@@ -291,7 +323,7 @@ if __name__ == "__main__":
         controlnet_start_percent=0,
         controlnet_end_percent=1,
         output_prefix="StyleTransfer",
-        image_width=512,
-        image_height=512,
+        image_width=1024,
+        image_height=1024,
     )
     print(json.dumps(nodes, indent=4))
