@@ -20,3 +20,4 @@ class WorkflowRequest(BaseModel):
     controlnet_end_percent: Optional[float] = 1
     output_prefix: Optional[str] = "StyleTransfer" 
     workflow_name: Optional[str] = None
+    use_tagger: Optional[bool] = False
