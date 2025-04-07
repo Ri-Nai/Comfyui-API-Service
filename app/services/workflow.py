@@ -184,8 +184,9 @@ class TextConcatenate(BaseNode):
     text_a: Optional[str] = None
     text_b: Optional[str] = None
     delimiter: str = ", "
-    clean_whitespace: bool = True
+    clean_whitespace: str = "true"
     class_name: str = "Text Concatenate"
+
 
 @dataclass
 class ImageScale(BaseNode):
@@ -194,6 +195,7 @@ class ImageScale(BaseNode):
     crop: str = "disabled"
     upscale_method: str = "nearest-exact"
     image: Optional[List[int]] = None
+
 
 def create_tagger_workflow(
     input_image: str,
@@ -208,7 +210,7 @@ def create_tagger_workflow(
         setattr(node, "id", str(node_counter))
         nodes[str(node_counter)] = node
         return node
-    
+
     load_image = create_node(LoadImage, image=input_image)
     tagger = create_node(WD14TaggerPysssss)
     link(load_image, 0, tagger, "image")
@@ -237,6 +239,7 @@ def create_style_transfer_workflow(
     output_prefix: str = "StyleTransfer",
     image_width: int = 1024,
     image_height: int = 1024,
+    use_tagger: bool = False,
 ) -> Dict[str, Any]:
     nodes = {}
     node_counter = 0
@@ -271,8 +274,15 @@ def create_style_transfer_workflow(
         link(final_output_model, 0, lora, "model")
         link(final_output_model, 1, lora, "clip")
         final_output_model = lora
-
     positive_text = create_node(TextMultiline, text=positive_prompt)
+    
+    if use_tagger:
+        tagger = create_node(WD14TaggerPysssss)
+        link(image_scale, 0, tagger, "image")
+        concatenate = create_node(TextConcatenate)
+        link(tagger, 0, concatenate, "text_a")
+        link(positive_text, 0, concatenate, "text_b")
+        positive_text = concatenate
 
     negative_text = create_node(TextMultiline, text=negative_prompt)
 

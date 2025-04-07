@@ -48,6 +48,7 @@ async def generate_image(request: WorkflowRequest):
             controlnet_start_percent=request.controlnet_start_percent,
             controlnet_end_percent=request.controlnet_end_percent,
             output_prefix=request.output_prefix,
+            use_tagger=request.use_tagger,
         )
 
         logger.info("成功创建workflow")
