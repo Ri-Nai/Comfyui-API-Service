@@ -190,7 +190,7 @@ class TextConcatenate(BaseNode):
 
 def create_style_transfer_workflow(
     input_image: str,
-    style_prompt: str,
+    positive_prompt: str,
     negative_prompt: str,
     checkpoint_name: str,
     controlnet_name: str,
@@ -239,7 +239,7 @@ def create_style_transfer_workflow(
         link(final_output_model, 1, lora, "clip")
         final_output_model = lora
 
-    style_text = create_node(TextMultiline, text=style_prompt)
+    style_text = create_node(TextMultiline, text=positive_prompt)
 
     negative_text = create_node(TextMultiline, text=negative_prompt)
 
@@ -307,7 +307,7 @@ def create_style_transfer_workflow(
 if __name__ == "__main__":
     nodes = create_style_transfer_workflow(
         input_image="input_image.png",
-        style_prompt="style_prompt",
+        positive_prompt="positive_prompt",
         negative_prompt="negative_prompt",
         checkpoint_name="checkpoint_name",
         controlnet_name="controlnet_name",
