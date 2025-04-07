@@ -127,6 +127,7 @@ class ComfyUIService:
         
         try:
             async def _wait_for_completion():
+                needed_tries = 0
                 while True:
                     try:
                         message = await self.ws.recv()
@@ -143,6 +144,11 @@ class ComfyUIService:
                             continue
                             
                         msg_type = data.get("type")
+
+                        if msg_type == "executed":
+                            if data.get("output").get("tags"):
+                                needed_tries += 1
+
                         if msg_type == "executing":
                             msg_data = data.get("data", {})
                             if not isinstance(msg_data, dict):
@@ -150,7 +156,9 @@ class ComfyUIService:
                                 
                             if msg_data.get("prompt_id") == prompt_id:
                                 if msg_data.get("node") is None:
-                                    return
+                                    needed_tries -= 1
+                                    if needed_tries == 0:
+                                        return
                         elif msg_type == "crystools.monitor":
                             continue
                         else:
