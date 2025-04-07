@@ -187,6 +187,14 @@ class TextConcatenate(BaseNode):
     clean_whitespace: bool = True
     class_name: str = "Text Concatenate"
 
+@dataclass
+class ImageScale(BaseNode):
+    width: int
+    height: int
+    crop: str = "disabled"
+    upscale_method: str = "nearest-exact"
+    image: Optional[List[int]] = None
+
 def create_tagger_workflow(
     input_image: str,
 ) -> Dict[str, Any]:
@@ -244,6 +252,10 @@ def create_style_transfer_workflow(
     # 创建各个节点
     checkpoint_loader = create_node(CheckpointLoaderSimple, ckpt_name=checkpoint_name)
     load_image = create_node(LoadImage, image=input_image)
+
+    image_scale = create_node(ImageScale, width=image_width, height=image_height)
+    link(load_image, 0, image_scale, "image")
+
     controlnet = create_node(ControlNetLoader, control_net_name=controlnet_name)
 
     final_output_model = checkpoint_loader
@@ -288,10 +300,10 @@ def create_style_transfer_workflow(
     link(negative_encode, 0, controlnet_apply, "negative")
     link(controlnet, 0, controlnet_apply, "control_net")
     link(checkpoint_loader, 2, controlnet_apply, "vae")
-    link(load_image, 0, controlnet_apply, "image")
+    link(image_scale, 0, controlnet_apply, "image")
 
     vae_encode = create_node(VAEEncode)
-    link(load_image, 0, vae_encode, "pixels")
+    link(image_scale, 0, vae_encode, "pixels")
     link(checkpoint_loader, 2, vae_encode, "vae")
 
     ksampler = create_node(
