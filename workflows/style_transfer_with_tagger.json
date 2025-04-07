@@ -1,0 +1,341 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "animij_v20.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Checkpoint加载器（简易）"
+    }
+  },
+  "2": {
+    "inputs": {
+      "image": "00030-581248139.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "加载图像"
+    }
+  },
+  "3": {
+    "inputs": {
+      "control_net_name": "controlnet-sd-xl-1.0-softedge-dexined.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "加载ControlNet模型"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": [
+        "14",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": [
+        "41",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "8": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "width": 1024,
+      "height": 1024,
+      "crop": "disabled",
+      "image": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "缩放图像"
+    }
+  },
+  "9": {
+    "inputs": {
+      "pixels": [
+        "8",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE编码"
+    }
+  },
+  "10": {
+    "inputs": {
+      "strength": 0.8500000000000002,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "35",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "control_net": [
+        "3",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ],
+      "image": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplySD3",
+    "_meta": {
+      "title": "应用ControlNet"
+    }
+  },
+  "11": {
+    "inputs": {
+      "seed": 681506142894282,
+      "steps": 40,
+      "cfg": 6.5,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 0.8000000000000002,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "10",
+        0
+      ],
+      "negative": [
+        "10",
+        1
+      ],
+      "latent_image": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "K采样器"
+    }
+  },
+  "12": {
+    "inputs": {
+      "samples": [
+        "11",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE解码"
+    }
+  },
+  "13": {
+    "inputs": {
+      "filename_prefix": "MyStyleTransfer",
+      "images": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "保存图像"
+    }
+  },
+  "14": {
+    "inputs": {
+      "model": "wd-v1-4-moat-tagger-v2",
+      "threshold": 0.35,
+      "character_threshold": 0.85,
+      "replace_underscore": false,
+      "trailing_comma": false,
+      "exclude_tags": "",
+      "tags": "1girl, solo, long_hair, looking_at_viewer, bangs, long_sleeves, purple_eyes, upper_body, pink_hair, purple_hair, multicolored_hair, hands_on_own_face",
+      "image": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "WD14Tagger|pysssss",
+    "_meta": {
+      "title": "WD14 Tagger 🐍"
+    }
+  },
+  "28": {
+    "inputs": {
+      "text": "(oil painting style),((impressionism)),vangogh, starry night"
+    },
+    "class_type": "Text Multiline",
+    "_meta": {
+      "title": "StylePrompt"
+    }
+  },
+  "35": {
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "crop_w": 0,
+      "crop_h": 0,
+      "target_width": 1024,
+      "target_height": 1024,
+      "text_g": [
+        "43",
+        0
+      ],
+      "text_l": [
+        "43",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncodeSDXL",
+    "_meta": {
+      "title": "CLIP文本编码SDXL"
+    }
+  },
+  "36": {
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "空Latent图像"
+    }
+  },
+  "37": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 948464608570707,
+      "steps": 30,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "start_at_step": 0,
+      "end_at_step": 20,
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "10",
+        0
+      ],
+      "negative": [
+        "10",
+        1
+      ],
+      "latent_image": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "K采样器（高级）"
+    }
+  },
+  "38": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 0,
+      "steps": 30,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "start_at_step": 20,
+      "end_at_step": 10000,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "10",
+        0
+      ],
+      "negative": [
+        "10",
+        1
+      ],
+      "latent_image": [
+        "37",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "K采样器（高级）"
+    }
+  },
+  "41": {
+    "inputs": {
+      "text": "underwear,different color eyes,short skirt,text font ui,error,heavy breasts,text,ui,error,missing fingers,missing limb,fused fingers,one hand with more than 5 fingers,one hand with less than 5 fingers,one hand with more than 5 digit,one hand with less than 5 digit,extra digit,fewer digits,fused digit,missing digit,bad digit,liquid digit,colorful tongue,black tongue,cropped,watermark,username,blurry,JPEG artifacts,signature,3D,3D game,3D game scene,3D character,big face,long face,bad eyes,fused eyes poorly drawn eyes,extra eyes,more than two legs,bad anatomy,bad hands,text,error,missing fingers,extra digit,fewer digits,cropped,worst quality,low quality,normal quality,jpeg artifacts,signature,watermark,username,blurry,multiple breasts,(mutated,hands and fingers:1.5 ),(long body :1.3),(mutation, poorly drawn :1.2),black-white,bad anatomy,liquid body,liquid tongue,disfigured,malformed,mutated,anatomical,nonsense,text font ui,error,malformed,hands,long neck,blurred,lowers,lowres,bad anatomy,bad proportions,bad shadow,uncoordinated body,unnatural body,fused,breasts,bad breasts,huge breasts,poorly,drawn breasts,extra breasts,liquid breasts.,heavy breasts,missing breasts,huge,haunch,huge thighs,huge calf,bad hands,fused hand,missing hand,disappearing,arms,disappearing thigh,disappearing calf,disappearing legs,fused ears,bad ears,poorly drawn ears,extra ears,liquid ears,heavy ears,missing ears,fused animal ears,bad animal ears,poorly drawn animal ears,extra animal ears,liquid animal ears,heavy,animal ears,missing animal ears,text,ui,error,missing fingers,missing limb,fused,fingers,one hand with more than 5 fingers,one hand with less than 5 fingers,one hand,with more than 5 digit,one hand with less,than 5 digit,extra digit,fewer digits,fused,digit,missing digit,bad digit,liquid digit,colorful tongue,black tongue,cropped,watermark,username,blurry,JPEG artifacts,signature,3D,3D game,3D game scene,3D,character,malformed feet,extra feet,bad,feet,poorly drawn feet,fused feet,missing,feet,extra shoes,bad shoes,fused shoes,more than two shoes,poorly drawn shoes,bad gloves,poorly drawn gloves,fused,gloves,bad cum,poorly drawn cum,fused,cum,bad hairs,poorly drawn hairs,fused,hairs,big muscles,ugly,bad face,fused,face,poorly drawn face,cloned face,big,face,long face,bad eyes,fused eyes poorly,drawn eyes,extra eyes,malformed limbs,more than 2 nipples,bad anatomy,bad hands,text,error,missing fingers,extra digit,fewer digits,cropped,worst quality,low quality,normal quality,jpeg artifacts,signature,watermark,username,blurry,multiple breasts,(mutated,hands and fingers:1.5 ),(long body :1.3),(mutation, poorly drawn :1.2),black-white,bad anatomy,liquid body,liquid tongue,disfigured,malformed,mutated,anatomical,nonsense,text font ui,error,malformed,hands,long neck,blurred,lowers,lowres,bad anatomy,bad proportions,bad shadow,uncoordinated body,unnatural body,fused,breasts,bad breasts,huge breasts,poorly,drawn breasts,extra breasts,liquid breasts.,heavy breasts,missing breasts,huge,haunch,huge thighs,huge calf,bad hands,fused hand,missing hand,disappearing,arms,disappearing thigh,disappearing calf,disappearing legs,fused ears,bad ears,poorly drawn ears,extra ears,liquid ears,heavy ears,missing ears,fused animal ears,bad animal ears,poorly drawn animal ears,extra animal ears,liquid animal ears,heavy,animal ears,missing animal ears,text,ui,error,missing fingers,missing limb,fused,fingers,one hand with more than 5 fingers,one hand with less than 5 fingers,one hand,with more than 5 digit,one hand with less,than 5 digit,extra digit,fewer digits,fused,digit,missing digit,bad digit,liquid digit,colorful tongue,black tongue,cropped,watermark,username,blurry,JPEG artifacts,signature,3D,3D game,3D game scene,3D,character,malformed feet,extra feet,bad,feet,poorly drawn feet,fused feet,missing,feet,extra shoes,bad shoes,fused shoes,more than two shoes,poorly drawn shoes,bad gloves,poorly drawn gloves,fused,gloves,bad cum,poorly drawn cum,fused,cum,bad hairs,poorly drawn hairs,fused,hairs,big muscles,ugly,bad face,fused,face,poorly drawn face,cloned face,big,face,long face,bad eyes,fused eyes poorly,drawn eyes,extra eyes,malformed limbs,more than 2 nipples,underwear,different color eyes,short skirt,text font ui,error,heavy breasts,text,ui,error,missing fingers,missing limb,fused fingers,one hand with more than 5 fingers,one hand with less than 5 fingers,one hand with more than 5 digit,one hand with less than 5 digit,extra digit,fewer digits,fused digit,missing digit,bad digit,liquid digit,colorful tongue,black tongue,cropped,watermark,username,blurry,JPEG artifacts,signature,3D,3D game,3D game scene,3D character,big face,long face,bad eyes,fused eyes poorly drawn eyes,extra eyes,more than two legs,"
+    },
+    "class_type": "Text Multiline",
+    "_meta": {
+      "title": "NegativePrompt"
+    }
+  },
+  "43": {
+    "inputs": {
+      "delimiter": ", ",
+      "clean_whitespace": "true",
+      "text_a": [
+        "28",
+        0
+      ],
+      "text_b": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "Text Concatenate",
+    "_meta": {
+      "title": "Text Concatenate"
+    }
+  }
+}
