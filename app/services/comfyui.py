@@ -146,6 +146,7 @@ class ComfyUIService:
                         msg_type = data.get("type")
 
                         if msg_type == "executed":
+                            msg_data = data.get("data", {})
                             if data.get("output").get("tags"):
                                 needed_tries += 1
 
