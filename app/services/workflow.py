@@ -244,6 +244,7 @@ def create_style_transfer_workflow(
     negative_text = create_node(TextMultiline, text=negative_prompt)
 
     tagger = create_node(WD14TaggerPysssss)
+    link(load_image, 0, tagger, "image")
 
     concatenate = create_node(TextConcatenate)
     link(style_text, 0, concatenate, "text_a")
