@@ -1,0 +1,322 @@
+{
+  "4": {
+    "inputs": {
+      "ckpt_name": "realvisxlV50_v50LightningBakedvae.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Checkpoint加载器（简易）"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": [
+        "402",
+        0
+      ],
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": [
+        "401",
+        0
+      ],
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "364": {
+    "inputs": {
+      "preset": "PLUS (high strength)",
+      "model": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "IPAdapterUnifiedLoader",
+    "_meta": {
+      "title": "IPAdapter Unified Loader"
+    }
+  },
+  "366": {
+    "inputs": {
+      "image": "00030-581248139.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "加载图像"
+    }
+  },
+  "374": {
+    "inputs": {
+      "samples": [
+        "413",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE解码"
+    }
+  },
+  "392": {
+    "inputs": {
+      "pixels": [
+        "398",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE编码"
+    }
+  },
+  "393": {
+    "inputs": {
+      "image": "00004-3840334864.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "加载图像"
+    }
+  },
+  "394": {
+    "inputs": {
+      "strength": 0.30000000000000004,
+      "start_percent": 0,
+      "end_percent": 0.5000000000000001,
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "control_net": [
+        "395",
+        0
+      ],
+      "image": [
+        "396",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "应用ControlNet（旧版高级）"
+    }
+  },
+  "395": {
+    "inputs": {
+      "control_net_name": "controlnet-sd-xl-1.0-softedge-dexined.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "加载ControlNet模型"
+    }
+  },
+  "396": {
+    "inputs": {
+      "image": [
+        "398",
+        0
+      ]
+    },
+    "class_type": "ImageInvert",
+    "_meta": {
+      "title": "反转图像"
+    }
+  },
+  "397": {
+    "inputs": {
+      "weight_style": 1.2000000000000002,
+      "weight_composition": 1.0000000000000002,
+      "expand_style": false,
+      "combine_embeds": "average",
+      "start_at": 0,
+      "end_at": 1,
+      "embeds_scaling": "V only",
+      "model": [
+        "364",
+        0
+      ],
+      "ipadapter": [
+        "364",
+        1
+      ],
+      "image_style": [
+        "393",
+        0
+      ],
+      "image_composition": [
+        "398",
+        0
+      ]
+    },
+    "class_type": "IPAdapterStyleComposition",
+    "_meta": {
+      "title": "IPAdapter Style & Composition SDXL"
+    }
+  },
+  "398": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "width": 1024,
+      "height": 1024,
+      "crop": "center",
+      "image": [
+        "366",
+        0
+      ]
+    },
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "缩放图像"
+    }
+  },
+  "399": {
+    "inputs": {
+      "filename_prefix": "2025-04-09/ComfyUI",
+      "images": [
+        "374",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "保存图像"
+    }
+  },
+  "401": {
+    "inputs": {
+      "text": "(worst quality, low quality, normal quality:1.4), blurry, noisy, jpeg artifacts, compression artifacts,\ndisfigured, deformed, malformed, mutated, bad anatomy, anatomical errors, disproportionate, distorted features,\nextra limbs, missing limbs, extra fingers, fused fingers, too many fingers, poorly drawn hands, malformed hands, mutated hands, bad hands,\nugly, grotesque, asymmetrical, messy, cluttered, unclear, tiling, poorly drawn face, out of frame,\ntext, words, letters, signature, watermark, username, artist name"
+    },
+    "class_type": "Text Multiline",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "402": {
+    "inputs": {
+      "text": "masterpiece, best quality, high resolution, ultra-detailed, intricate details, sharp focus,\nperfect proportions, anatomically plausible, balanced composition, flawless features,\nclean lines, smooth shading, crisp edges, refined details, no artifacts,\nwell-defined forms, harmonious elements\n"
+    },
+    "class_type": "Text Multiline",
+    "_meta": {
+      "title": "Positive Prompt"
+    }
+  },
+  "409": {
+    "inputs": {
+      "text": [
+        "402",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "410": {
+    "inputs": {
+      "text": [
+        "401",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "412": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 315460280871659,
+      "steps": 20,
+      "cfg": 2,
+      "sampler_name": "dpmpp_3m_sde_gpu",
+      "scheduler": "karras",
+      "start_at_step": 0,
+      "end_at_step": 15,
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "397",
+        0
+      ],
+      "positive": [
+        "394",
+        0
+      ],
+      "negative": [
+        "394",
+        1
+      ],
+      "latent_image": [
+        "392",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "K采样器（高级）"
+    }
+  },
+  "413": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 104429880324261,
+      "steps": 20,
+      "cfg": 2,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "start_at_step": 15,
+      "end_at_step": 10000,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "397",
+        0
+      ],
+      "positive": [
+        "394",
+        0
+      ],
+      "negative": [
+        "394",
+        1
+      ],
+      "latent_image": [
+        "412",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "K采样器（高级）"
+    }
+  }
+}

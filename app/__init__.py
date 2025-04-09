@@ -10,6 +10,6 @@ def create_app() -> FastAPI:
     app = FastAPI(title="ComfyUI API Service")
     
     # 注册路由
-    app.include_router(generation.router, prefix="/api/v1", tags=["generation"])
+    app.include_router(generation.router)
     
     return app 

@@ -1,42 +1,158 @@
 import requests
 import random
+import time
 from app.utils.image_helper import ImageHelper
 
-url = "http://127.0.0.1:8000/api/v1/generate"
+BASE_URL = "http://127.0.0.1:8000" # 定义基础 URL
 
-# 读取并编码图片
-base64_encoded_image_data = ImageHelper.encode_image("image.png")
+# --- 1. Example: Style Transfer (Single Image) --- 
+url_style_transfer = f"{BASE_URL}/generate/style_transfer"
+print(f"调用 Style Transfer API: {url_style_transfer}")
 
-request_data = {
-    "input_image": base64_encoded_image_data,
-    "positive_prompt": "cyberpunk style, red light eyes, mechanic body, laser in eyes, neon",
-    "negative_prompt": "underwear,different color eyes,short skirt,text font ui,error,heavy breasts,text,ui,error,missing fingers,missing limb,fused fingers,one hand with more than 5 fingers,one hand with less than 5 fingers,one hand with more than 5 digit,one hand with less than 5 digit,extra digit,fewer digits,fused digit,missing digit,bad digit,liquid digit,colorful tongue,black tongue,cropped,watermark,username,blurry,JPEG artifacts,signature,3D,3D game,3D game scene,3D character,big face,long face,bad eyes,fused eyes poorly drawn eyes,extra eyes,more than two legs,bad anatomy,bad hands,text,error,missing fingers,extra digit,fewer digits,cropped,worst quality,low quality,normal quality,jpeg artifacts,signature,watermark,username,blurry,multiple breasts,(mutated,hands and fingers:1.5 ),(long body :1.3),(mutation, poorly drawn :1.2),black-white,bad anatomy,liquid body,liquid tongue,disfigured,malformed,mutated,anatomical,nonsense,text font ui,error,malformed,hands,long neck,blurred,lowers,lowres,bad anatomy,bad proportions,bad shadow,uncoordinated body,unnatural body,fused,breasts,bad breasts,huge breasts,poorly,drawn breasts,extra breasts,liquid breasts.,heavy breasts,missing breasts,huge,haunch,huge thighs,huge calf,bad hands,fused hand,missing hand,disappearing,arms,disappearing thigh,disappearing calf,disappearing legs,fused ears,bad ears,poorly drawn ears,extra ears,liquid ears,heavy ears,missing ears,fused animal ears,bad animal ears,poorly drawn animal ears,extra animal ears,liquid animal ears,heavy,animal ears,missing animal ears,text,ui,error,missing fingers,missing limb,fused,fingers,one hand with more than 5 fingers,one hand with less than 5 fingers,one hand,with more than 5 digit,one hand with less,than 5 digit,extra digit,fewer digits,fused,digit,missing digit,bad digit,liquid digit,colorful tongue,black tongue,cropped,watermark,username,blurry,JPEG artifacts,signature,3D,3D game,3D game scene,3D,character,malformed feet,extra feet,bad,feet,poorly drawn feet,fused feet,missing,feet,extra shoes,bad shoes,fused shoes,more than two shoes,poorly drawn shoes,bad gloves,poorly drawn gloves,fused,gloves,bad cum,poorly drawn cum,fused,cum,bad hairs,poorly drawn hairs,fused,hairs,big muscles,ugly,bad face,fused,face,poorly drawn face,cloned face,big,face,long face,bad eyes,fused eyes poorly,drawn eyes,extra eyes,malformed limbs,more than 2 nipples,bad anatomy,bad hands,text,error,missing fingers,extra digit,fewer digits,cropped,worst quality,low quality,normal quality,jpeg artifacts,signature,watermark,username,blurry,multiple breasts,(mutated,hands and fingers:1.5 ),(long body :1.3),(mutation, poorly drawn :1.2),black-white,bad anatomy,liquid body,liquid tongue,disfigured,malformed,mutated,anatomical,nonsense,text font ui,error,malformed,hands,long neck,blurred,lowers,lowres,bad anatomy,bad proportions,bad shadow,uncoordinated body,unnatural body,fused,breasts,bad breasts,huge breasts,poorly,drawn breasts,extra breasts,liquid breasts.,heavy breasts,missing breasts,huge,haunch,huge thighs,huge calf,bad hands,fused hand,missing hand,disappearing,arms,disappearing thigh,disappearing calf,disappearing legs,fused ears,bad ears,poorly drawn ears,extra ears,liquid ears,heavy ears,missing ears,fused animal ears,bad animal ears,poorly drawn animal ears,extra animal ears,liquid animal ears,heavy,animal ears,missing animal ears,text,ui,error,missing fingers,missing limb,fused,fingers,one hand with more than 5 fingers,one hand with less than 5 fingers,one hand,with more than 5 digit,one hand with less,than 5 digit,extra digit,fewer digits,fused,digit,missing digit,bad digit,liquid digit,colorful tongue,black tongue,cropped,watermark,username,blurry,JPEG artifacts,signature,3D,3D game,3D game scene,3D,character,malformed feet,extra feet,bad,feet,poorly drawn feet,fused feet,missing,feet,extra shoes,bad shoes,fused shoes,more than two shoes,poorly drawn shoes,bad gloves,poorly drawn gloves,fused,gloves,bad cum,poorly drawn cum,fused,cum,bad hairs,poorly drawn hairs,fused,hairs,big muscles,ugly,bad face,fused,face,poorly drawn face,cloned face,big,face,long face,bad eyes,fused eyes poorly,drawn eyes,extra eyes,malformed limbs,more than 2 nipples,underwear,different color eyes,short skirt,text font ui,error,heavy breasts,text,ui,error,missing fingers,missing limb,fused fingers,one hand with more than 5 fingers,one hand with less than 5 fingers,one hand with more than 5 digit,one hand with less than 5 digit,extra digit,fewer digits,fused digit,missing digit,bad digit,liquid digit,colorful tongue,black tongue,cropped,watermark,username,blurry,JPEG artifacts,signature,3D,3D game,3D game scene,3D character,big face,long face,bad eyes,fused eyes poorly drawn eyes,extra eyes,more than two legs,",
-    "checkpoint_name": "animij_v20.safetensors",
+# 读取并编码输入图片
+base64_encoded_input_image = ImageHelper.encode_image("image.png")
+
+style_transfer_request_data = {
+    "input_image": base64_encoded_input_image,
+    "positive_prompt": "masterpiece, best quality, highly detailed, cyberpunk style, red light eyes, mechanic body, laser in eyes, neon city background",
+    "negative_prompt": "(worst quality, low quality, normal quality:1.4), blurry, noisy, jpeg artifacts, text, watermark, username, signature, deformed, disfigured, bad anatomy, extra limbs, missing limbs",
+    "checkpoint_name": "realvisxlV50_v50LightningBakedvae.safetensors",
     "controlnet_name": "controlnet-sd-xl-1.0-softedge-dexined.safetensors",
-    "lora_names": [],
+    "lora_names": [], # e.g., ["add_detail.safetensors"]
     "seed": random.randint(1, 1000000),
     "steps": 20,
     "cfg": 6.5,
     "sampler_name": "euler",
     "scheduler": "normal",
-    "denoise": 0.75,
+    "denoise": 0.75, # 控制风格迁移强度
     "lora_strength": 1.0,
-    "controlnet_strength": 0.85,
-    "output_prefix": "MyStyleTransfer"
+    "controlnet_strength": 0.5, # 控制 ControlNet 强度
+    "controlnet_start_percent": 0.0,
+    "controlnet_end_percent": 0.5,
+    "output_prefix": "StyleTransferOutput",
+    "use_tagger": False, # 设为 True 以启用 tagger
+    "image_width": 1024,
+    "image_height": 1024,
+    # 如果 use_tagger=True，可以设置以下参数
+    # "tagger_model": "wd-v1-4-moat-tagger-v2",
+    # "tagger_general_threshold": 0.35,
+    # "tagger_character_threshold": 0.85,
 }
 
+response = requests.post(url_style_transfer, json=style_transfer_request_data)
 
+try:
+    # Raise HTTPError for bad responses (4xx or 5xx)
+    response.raise_for_status()
+    result = response.json()
+    print("Style Transfer Response:", result)
 
+    # Check logical success within the JSON payload
+    if result.get("status") == "success" and result.get("images"):
+        for img_data in result["images"]:
+            try:
+                save_path = ImageHelper.get_output_path(img_data["filename"])
+                ImageHelper.decode_and_save_image(img_data["data"], save_path)
+                print(f"Style Transfer 图片已保存为: {save_path}")
+            except Exception as e:
+                print(f"保存 Style Transfer 图片失败: {str(e)}")
+    else:
+        # Handle cases where the API call was successful (200 OK) but the operation failed logically
+        print(f"Style Transfer API 返回逻辑错误: {result.get('message', 'No message')} - Detail: {result.get('detail', result)}")
 
-response = requests.post(url, json=request_data)
-result = response.json()
+except requests.exceptions.HTTPError as http_err:
+    # Handle HTTP errors (4xx, 5xx)
+    print(f"Style Transfer HTTP 请求失败: {http_err}")
+    try:
+        # Try to get more details from the response body if possible
+        error_details = response.json()
+        print(f"Error details: {error_details.get('detail', response.text)}")
+    except requests.exceptions.JSONDecodeError:
+        print(f"Response body: {response.text}")
+except requests.exceptions.RequestException as req_err:
+    # Handle other request errors (connection, timeout, etc.)
+    print(f"Style Transfer 请求错误: {req_err}")
+except Exception as e:
+    # Catch any other unexpected errors during processing
+    print(f"处理 Style Transfer 响应时发生意外错误: {e}")
 
-# 保存返回的图片
-if result["status"] == "success" and result["images"]:
-    for img_data in result["images"]:
-        try:
-            save_path = ImageHelper.get_output_path(img_data["filename"])
-            ImageHelper.decode_and_save_image(img_data["data"], save_path)
-            print(f"图片已保存为: {save_path}")
-        except Exception as e:
-            print(f"保存图片失败: {str(e)}")
+print("\n---\n")
+
+# --- 2. Example: Tagger --- (Commented Out)
+# url_tagger = f"{BASE_URL}/generate/tagger"
+# print(f"调用 Tagger API: {url_tagger}")
+# tagger_request_data = {
+#     "input_image": base64_encoded_input_image, # 使用上面编码的同一张图片
+# }
+# try:
+#     response_tagger = requests.post(url_tagger, json=tagger_request_data)
+#     response_tagger.raise_for_status() # Check for HTTP errors
+#     result_tagger = response_tagger.json()
+#     print("Tagger Response:", result_tagger)
+#     if result_tagger.get("status") == "success":
+#         print("提取到的标签:", result_tagger.get("tags"))
+#     else:
+#          print(f"Tagger API 返回逻辑错误: {result_tagger.get('message', 'No message')} - Detail: {result_tagger.get('detail', result_tagger)}")
+# except requests.exceptions.HTTPError as http_err:
+#     print(f"Tagger HTTP 请求失败: {http_err}")
+#     try:
+#         error_details = response_tagger.json()
+#         print(f"Error details: {error_details.get('detail', response_tagger.text)}")
+#     except requests.exceptions.JSONDecodeError:
+#         print(f"Response body: {response_tagger.text}")
+# except requests.exceptions.RequestException as req_err:
+#     print(f"Tagger 请求错误: {req_err}")
+# except Exception as e:
+#     print(f"处理 Tagger 响应时发生意外错误: {e}")
+
+# print("\n---\n")
+
+# --- 3. Example: Style Transfer with Image (IPAdapter) --- (Commented Out)
+url_style_transfer_image = f"{BASE_URL}/generate/style_transfer_with_image"
+print(f"调用 Style Transfer with Image API: {url_style_transfer_image}")
+# 读取并编码风格图片
+base64_encoded_style_image = ImageHelper.encode_image("style.jpg") # 假设你有一张 style.jpg
+style_transfer_image_request_data = {
+    "input_image": base64_encoded_input_image, # 内容图片
+    "style_image": base64_encoded_style_image, # 风格图片
+    "style_prompt": "in the style of Van Gogh, starry night",
+    "checkpoint_name": "realvisxlV50_v50LightningBakedvae.safetensors",
+    "controlnet_name": "controlnet-sd-xl-1.0-softedge-dexined.safetensors",
+    "positive_prompt": "masterpiece, best quality, high resolution, landscape",
+    "negative_prompt": "(worst quality, low quality:1.4), blurry, text, watermark",
+    "ipadapter_preset": "PLUS (high strength)",
+    "controlnet_strength": 0.3,
+    "ipadapter_weight_style": 1.2,
+    "ksampler1_seed": random.randint(1, 1000000),
+    "ksampler2_seed": random.randint(1, 1000000),
+    "output_prefix": "StyleTransferWithImageOutput",
+    "image_width": 1024,
+    "image_height": 1024,
+}
+try:
+    response_style_image = requests.post(url_style_transfer_image, json=style_transfer_image_request_data)
+    response_style_image.raise_for_status()
+    result_style_image = response_style_image.json()
+    print("Style Transfer with Image Response:", result_style_image)
+    # 保存返回的图片
+    if result_style_image.get("status") == "success" and result_style_image.get("images"):
+        for img_data in result_style_image["images"]:
+            try:
+                save_path = ImageHelper.get_output_path(img_data["filename"])
+                ImageHelper.decode_and_save_image(img_data["data"], save_path)
+                print(f"Style Transfer with Image 图片已保存为: {save_path}")
+            except Exception as e:
+                print(f"保存 Style Transfer with Image 图片失败: {str(e)}")
+    else:
+         print(f"Style Transfer with Image API 返回逻辑错误: {result_style_image.get('message', 'No message')} - Detail: {result_style_image.get('detail', result_style_image)}")
+except requests.exceptions.HTTPError as http_err:
+    print(f"Style Transfer with Image HTTP 请求失败: {http_err}")
+    try:
+        error_details = response_style_image.json()
+        print(f"Error details: {error_details.get('detail', response_style_image.text)}")
+    except requests.exceptions.JSONDecodeError:
+        print(f"Response body: {response_style_image.text}")
+except requests.exceptions.RequestException as req_err:
+    print(f"Style Transfer with Image 请求错误: {req_err}")
+except Exception as e:
+    print(f"处理 Style Transfer with Image 响应时发生意外错误: {e}")
