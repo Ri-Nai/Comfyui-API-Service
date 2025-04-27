@@ -10,13 +10,15 @@ from typing import Dict, Any
 from app.models.requests import (
     TaggerRequest, 
     StyleTransferRequest, 
-    StyleTransferWithImageRequest
+    StyleTransferWithImageRequest,
+    CombinedStyleTransferRequest
 ) 
 from app.services.comfyui import ComfyUIService
 from app.services.workflow import (
     create_tagger_workflow,
     create_style_transfer_workflow,
     create_style_transfer_with_image_workflow,
+    create_combined_style_transfer_workflow
 )
 from app.utils.image_helper import ImageHelper
 
@@ -143,6 +145,67 @@ async def style_transfer_endpoint(request: StyleTransferRequest):
     except Exception as e:
         logger.error(f"单图风格迁移生成图像时发生错误: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"单图风格迁移过程中发生内部错误: {str(e)}")
+
+@router.post("/combined_style_transfer", summary="Generate Image with Combined Style Transfer (Single Image)")
+async def combined_style_transfer_endpoint(request: CombinedStyleTransferRequest):
+    """使用结合了tagger和IPAdapter的风格迁移工作流。"""
+    try:
+        logger.info("开始结合风格迁移图像生成...")
+        uploaded_filename = await _upload_image_from_base64(request.input_image, comfyui_service)
+
+        workflow = create_combined_style_transfer_workflow(
+            input_image=uploaded_filename,
+            style_prompt=request.style_prompt,
+            checkpoint_name=request.checkpoint_name,
+            controlnet_name=request.controlnet_name,
+            positive_prompt=request.positive_prompt,
+            negative_prompt=request.negative_prompt,
+            ipadapter_preset=request.ipadapter_preset,
+            ipadapter_weight_style=request.ipadapter_weight_style,
+            ipadapter_weight_composition=request.ipadapter_weight_composition,
+            controlnet_strength=request.controlnet_strength,
+            controlnet_start_percent=request.controlnet_start_percent,
+            controlnet_end_percent=request.controlnet_end_percent,
+            style_sampler_seed=request.style_sampler_seed,
+            style_sampler_steps=request.style_sampler_steps,
+            style_sampler_cfg=request.style_sampler_cfg,
+            style_sampler_name=request.style_sampler_name,
+            style_sampler_scheduler=request.style_sampler_scheduler,    
+            main_sampler_seed=request.main_sampler_seed,
+            main_sampler_steps=request.main_sampler_steps,
+            main_sampler_cfg=request.main_sampler_cfg,
+            main_sampler_name=request.main_sampler_name,
+            main_sampler_scheduler=request.main_sampler_scheduler,
+            main_sampler_denoise=request.main_sampler_denoise,
+            output_prefix=request.output_prefix,
+            image_width=request.image_width,
+            image_height=request.image_height,
+            image_scale_method=request.image_scale_method,
+            image_scale_crop=request.image_scale_crop,
+            use_tagger=request.use_tagger,
+            tagger_model=request.tagger_model if request.use_tagger else None,
+            tagger_general_threshold=request.tagger_general_threshold if request.use_tagger else None,
+            tagger_character_threshold=request.tagger_character_threshold if request.use_tagger else None,
+            tagger_concat_delimiter=request.tagger_concat_delimiter,
+            tagger_concat_clean_whitespace=request.tagger_concat_clean_whitespace,
+        )
+        logger.info("成功创建 Combined Style Transfer workflow")
+
+        result = await _execute_workflow(workflow, comfyui_service)
+
+        return {
+            "status": "success",
+            "message": "图像生成完成 (Combined Style Transfer)",
+            **result,
+        }
+
+    except HTTPException as http_exc:
+        logger.error(f"结合风格迁移请求错误: {http_exc.detail}")
+        raise http_exc
+    except Exception as e:
+        logger.error(f"结合风格迁移生成图像时发生错误: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"结合风格迁移过程中发生内部错误: {str(e)}")
+
 
 
 @router.post("/style_transfer_with_image", summary="Generate Image with Style Transfer (Two Images + IPAdapter)")

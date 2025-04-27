@@ -651,10 +651,274 @@ def create_style_transfer_with_image_workflow(
 
     return workflow.get_nodes_dict()
 
+def create_combined_style_transfer_workflow(
+    input_image: str,
+    style_prompt: str,
+    checkpoint_name: str,
+    controlnet_name: str,
+    # 可选参数
+    positive_prompt: str = "masterpiece, best quality, high resolution, ultra-detailed, intricate details",
+    negative_prompt: str = "(worst quality, low quality, normal quality:1.4), blurry, noisy, jpeg artifacts, deformed, disfigured",
+    # IPAdapter 参数
+    ipadapter_preset: str = "PLUS (high strength)",
+    ipadapter_weight_style: float = 1.2,
+    ipadapter_weight_composition: float = 1.0,
+    # ControlNet 参数
+    controlnet_strength: float = 0.8,
+    controlnet_start_percent: float = 0.0,
+    controlnet_end_percent: float = 0.6,
+    # 采样器参数
+    style_sampler_seed: int = -1,
+    style_sampler_steps: int = 5,
+    style_sampler_cfg: float = 1.5,
+    style_sampler_name: str = "euler",
+    style_sampler_scheduler: str = "normal",
+    main_sampler_seed: int = -1,
+    main_sampler_steps: int = 10,
+    main_sampler_cfg: float = 1.5,
+    main_sampler_name: str = "euler",
+    main_sampler_scheduler: str = "normal",
+    main_sampler_denoise: float = 0.84,
+    # 图像参数 
+    output_prefix: str = "CombinedStyleTransfer",
+    image_width: int = 1024,
+    image_height: int = 1024,
+    image_scale_method: str = "nearest-exact",
+    image_scale_crop: str = "disabled",
+    # Tagger参数
+    use_tagger: bool = False,
+    tagger_model: str = "wd-v1-4-moat-tagger-v2",
+    tagger_general_threshold: float = 0.35,
+    tagger_character_threshold: float = 0.85,
+    tagger_concat_delimiter: str = ", ",
+    tagger_concat_clean_whitespace: str = "true",
+) -> Dict[str, Any]:
+    """
+    创建结合了tagger和IPAdapter风格的工作流。
+    
+    该工作流包含:
+    1. 可选的WD14Tagger标签生成
+    2. 基于文本提示的风格图像生成
+    3. 使用IPAdapter应用风格到输入图像
+    4. 使用ControlNet进行图像引导
+    
+    Args:
+        input_image: 输入内容图像路径
+        style_prompt: 用于生成风格参考图像的提示词
+        checkpoint_name: 模型检查点名称
+        controlnet_name: ControlNet模型名称
+        positive_prompt: 正向提示词
+        negative_prompt: 负向提示词
+        ipadapter_preset: IPAdapter预设配置
+        ipadapter_weight_style: 风格权重
+        ipadapter_weight_composition: 构图权重
+        controlnet_strength: ControlNet强度
+        controlnet_start_percent: ControlNet开始百分比
+        controlnet_end_percent: ControlNet结束百分比
+        style_sampler_seed: 风格图像采样器种子
+        style_sampler_steps: 风格图像采样器步数
+        style_sampler_cfg: 风格图像采样器CFG值
+        style_sampler_name: 风格图像采样器名称
+        style_sampler_scheduler: 风格图像采样器调度器
+        main_sampler_seed: 主采样器种子
+        main_sampler_steps: 主采样器步数
+        main_sampler_cfg: 主采样器CFG值
+        main_sampler_name: 主采样器名称
+        main_sampler_scheduler: 主采样器调度器
+        main_sampler_denoise: 主采样器去噪强度
+        output_prefix: 输出文件前缀
+        image_width: 图像宽度
+        image_height: 图像高度
+        image_scale_method: 图像缩放方法
+        image_scale_crop: 图像裁剪方法
+        use_tagger: 是否使用标签生成
+        tagger_model: 标签模型名称
+        tagger_general_threshold: 通用标签阈值
+        tagger_character_threshold: 角色标签阈值
+        tagger_concat_delimiter: 标签连接分隔符
+        tagger_concat_clean_whitespace: 是否清理标签空白
+        
+    Returns:
+        工作流节点字典
+    """
+    workflow = BaseWorkflow()
+
+    # --- 加载基础模型 ---
+    checkpoint_loader = workflow.create_node(
+        CheckpointLoaderSimple, ckpt_name=checkpoint_name
+    )
+    
+    # --- 加载输入图像 ---
+    input_image_loader = workflow.create_node(LoadImage, image=input_image)
+    
+    # --- 缩放输入图像 ---
+    image_scale = workflow.create_node(
+        ImageScale,
+        width=image_width,
+        height=image_height,
+        upscale_method=image_scale_method,
+        crop=image_scale_crop,
+    )
+    
+    # --- 提示词节点 ---
+    style_prompt_node = workflow.create_node(TextMultiline, text=style_prompt)
+    negative_prompt_node = workflow.create_node(TextMultiline, text=negative_prompt)
+    positive_prompt_node = workflow.create_node(TextMultiline, text=positive_prompt)
+    
+    # --- 链接输入图像到缩放 ---
+    link(input_image_loader, 0, image_scale, "image")
+    
+    # --- Tagger分支 (可选) ---
+    if use_tagger:
+        tagger = workflow.create_node(
+            WD14TaggerPysssss,
+            model=tagger_model,
+            threshold=tagger_general_threshold,
+            character_threshold=tagger_character_threshold,
+        )
+        prompt_concatenate = workflow.create_node(
+            TextConcatenate,
+            delimiter=tagger_concat_delimiter,
+            clean_whitespace=tagger_concat_clean_whitespace,
+        )
+        link(image_scale, 0, tagger, "image")
+        link(tagger, 0, prompt_concatenate, "text_a")
+        link(positive_prompt_node, 0, prompt_concatenate, "text_b")
+        # 使用连接后的文本作为最终正向提示词
+        final_positive_prompt = prompt_concatenate
+    else:
+        final_positive_prompt = positive_prompt_node
+    
+    # --- 创建用于风格图像的空Latent ---
+    empty_latent = workflow.create_node(
+        EmptyLatentImage,
+        width=image_width,
+        height=image_height,
+        batch_size=1
+    )
+    
+    # --- 风格图像的CLIP编码 ---
+    style_positive_encode = workflow.create_node(CLIPTextEncode)
+    style_negative_encode = workflow.create_node(CLIPTextEncode)
+    
+    # --- 链接CLIP ---
+    link(checkpoint_loader, 1, style_positive_encode, "clip")
+    link(checkpoint_loader, 1, style_negative_encode, "clip")
+    link(style_prompt_node, 0, style_positive_encode, "text")
+    link(negative_prompt_node, 0, style_negative_encode, "text")
+    
+    # --- 风格图像的KSampler ---
+    style_ksampler = workflow.create_node(
+        KSampler,
+        seed=seed_value(style_sampler_seed),
+        steps=style_sampler_steps,
+        cfg=style_sampler_cfg,
+        sampler_name=style_sampler_name,
+        scheduler=style_sampler_scheduler,
+        denoise=1.0,  # 完全去噪以生成风格图像
+    )
+    
+    # --- 链接风格图像KSampler ---
+    link(checkpoint_loader, 0, style_ksampler, "model")
+    link(style_positive_encode, 0, style_ksampler, "positive")
+    link(style_negative_encode, 0, style_ksampler, "negative")
+    link(empty_latent, 0, style_ksampler, "latent_image")
+    
+    # --- 风格图像的VAE解码 ---
+    style_vae_decode = workflow.create_node(VAEDecode)
+    link(style_ksampler, 0, style_vae_decode, "samples")
+    link(checkpoint_loader, 2, style_vae_decode, "vae")
+    
+    # --- IPAdapter加载和应用 ---
+    ipadapter_loader = workflow.create_node(
+        IPAdapterUnifiedLoader, preset=ipadapter_preset
+    )
+    link(checkpoint_loader, 0, ipadapter_loader, "model")
+    
+    ipadapter_apply = workflow.create_node(
+        IPAdapterStyleComposition,
+        weight_style=ipadapter_weight_style,
+        weight_composition=ipadapter_weight_composition,
+        expand_style=False,
+        combine_embeds="average",
+        start_at=0.0,
+        end_at=1.0,
+        embeds_scaling="V only",
+    )
+    
+    # --- 链接IPAdapter ---
+    link(ipadapter_loader, 0, ipadapter_apply, "model")
+    link(ipadapter_loader, 1, ipadapter_apply, "ipadapter")
+    link(style_vae_decode, 0, ipadapter_apply, "image_style")
+    link(image_scale, 0, ipadapter_apply, "image_composition")
+    
+    # --- ControlNet加载和应用 ---
+    controlnet_loader = workflow.create_node(
+        ControlNetLoader, control_net_name=controlnet_name
+    )
+    
+    # 主要图像处理的CLIP编码
+    main_positive_encode = workflow.create_node(CLIPTextEncode)
+    main_negative_encode = workflow.create_node(CLIPTextEncode)
+    
+    # 链接CLIP
+    link(checkpoint_loader, 1, main_positive_encode, "clip")
+    link(checkpoint_loader, 1, main_negative_encode, "clip")
+    link(final_positive_prompt, 0, main_positive_encode, "text")
+    link(negative_prompt_node, 0, main_negative_encode, "text")
+    
+    # ControlNet应用
+    controlnet_apply = workflow.create_node(
+        ControlNetApplyAdvanced,
+        strength=controlnet_strength,
+        start_percent=controlnet_start_percent,
+        end_percent=controlnet_end_percent,
+    )
+    
+    # 链接ControlNet
+    link(main_positive_encode, 0, controlnet_apply, "positive")
+    link(main_negative_encode, 0, controlnet_apply, "negative")
+    link(controlnet_loader, 0, controlnet_apply, "control_net")
+    link(image_scale, 0, controlnet_apply, "image")
+    link(checkpoint_loader, 2, controlnet_apply, "vae")
+    
+    # --- 输入图像的VAE编码 ---
+    vae_encode = workflow.create_node(VAEEncode)
+    link(image_scale, 0, vae_encode, "pixels")
+    link(checkpoint_loader, 2, vae_encode, "vae")
+    
+    # --- 主KSampler ---
+    main_ksampler = workflow.create_node(
+        KSampler,
+        seed=seed_value(main_sampler_seed),
+        steps=main_sampler_steps,
+        cfg=main_sampler_cfg,
+        sampler_name=main_sampler_name,
+        scheduler=main_sampler_scheduler,
+        denoise=main_sampler_denoise,
+    )
+    
+    # --- 链接主KSampler ---
+    link(ipadapter_apply, 0, main_ksampler, "model")
+    link(controlnet_apply, 0, main_ksampler, "positive")
+    link(controlnet_apply, 1, main_ksampler, "negative")
+    link(vae_encode, 0, main_ksampler, "latent_image")
+    
+    # --- 最终VAE解码 ---
+    vae_decode = workflow.create_node(VAEDecode)
+    link(main_ksampler, 0, vae_decode, "samples")
+    link(checkpoint_loader, 2, vae_decode, "vae")
+    
+    # --- 保存图像 ---
+    save_image = workflow.create_node(SaveImage, filename_prefix=output_prefix)
+    link(vae_decode, 0, save_image, "images")
+    
+    return workflow.get_nodes_dict()
+
 
 if __name__ == "__main__":
     # Example usage for create_style_transfer_workflow
-    with open("../../style_transfer_nodes.json", "w") as f:
+    with open("../../tmp_style_transfer_nodes.json", "w") as f:
         style_transfer_nodes = create_style_transfer_workflow(
             input_image="input_image.png",
             positive_prompt="beautiful scenery, masterpiece",
@@ -667,7 +931,7 @@ if __name__ == "__main__":
             use_tagger=True,  # Example with tagger
         )
         f.write(json.dumps(style_transfer_nodes, indent=2))
-    with open("../../style_image_nodes.json", "w") as f:
+    with open("../../tmp_style_image_nodes.json", "w") as f:
         style_image_nodes = create_style_transfer_with_image_workflow(
             input_image="content_image.png",
             style_image="style_ref.png",
@@ -677,3 +941,17 @@ if __name__ == "__main__":
             output_prefix="StyleImageOutput",
         )
         f.write(json.dumps(style_image_nodes, indent=2))  # Print this one
+
+    # Example usage for combined style transfer workflow
+    with open("../../tmp_combined_style_nodes.json", "w") as f:
+        combined_nodes = create_combined_style_transfer_workflow(
+            input_image="content_image.png",
+            style_prompt="vangogh's starry night",
+            checkpoint_name="realvisxlV50_v50LightningBakedvae.safetensors",
+            controlnet_name="controlnet-sd-xl-1.0-softedge-dexined.safetensors",
+            positive_prompt="1 girl, cute, pink hair, smiling",
+            negative_prompt="blurry, noisy, messy, lowres, jpeg, artifacts, ill, distorted, malformed",
+            use_tagger=True,  # Enable tagger to analyze the input image
+            output_prefix="CombinedStyleTransfer",
+        )
+        f.write(json.dumps(combined_nodes, indent=2))

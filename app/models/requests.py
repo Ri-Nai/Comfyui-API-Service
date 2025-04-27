@@ -70,6 +70,49 @@ class StyleTransferWithImageRequest(BaseImageRequest):
     image_width: int = 1024
     image_height: int = 1024
 
+class CombinedStyleTransferRequest(BaseImageRequest):
+    """用于结合风格迁移的请求模型"""
+    style_prompt: str
+    checkpoint_name: str
+    controlnet_name: str
+    # 可选参数及其默认值 (参考 workflow.py)
+    positive_prompt: str = "masterpiece, best quality, high resolution, ultra-detailed, intricate details"
+    negative_prompt: str = "(worst quality, low quality, normal quality:1.4), blurry, noisy, jpeg artifacts, deformed, disfigured"
+    ipadapter_preset: str = "PLUS (high strength)"
+    ipadapter_weight_style: float = 1.2
+    ipadapter_weight_composition: float = 1.0
+    controlnet_strength: float = 0.8
+    controlnet_start_percent: float = 0.0
+    controlnet_end_percent: float = 0.6
+    style_sampler_seed: int = -1
+    style_sampler_steps: int = 5
+    style_sampler_cfg: float = 1.5
+    style_sampler_name: str = "euler"
+    style_sampler_scheduler: str = "normal"
+    main_sampler_seed: int = -1
+    main_sampler_steps: int = 10
+    main_sampler_cfg: float = 1.5
+    main_sampler_name: str = "euler"
+    main_sampler_scheduler: str = "normal"
+    main_sampler_denoise: float = 0.84
+    output_prefix: str = "CombinedStyleTransfer"
+    image_width: int = 1024
+    image_height: int = 1024
+    image_scale_method: str = "nearest-exact"
+    image_scale_crop: str = "disabled"
+    use_tagger: bool = False
+    tagger_model: str = "wd-v1-4-moat-tagger-v2"
+    tagger_general_threshold: float = 0.35
+    tagger_character_threshold: float = 0.85
+    tagger_concat_delimiter: str = ", "
+    tagger_concat_clean_whitespace: str = "true"
+
+    
+    
+    
+    
+    
+
 # 保留旧的 WorkflowRequest 以防万一，但建议逐步淘汰
 class WorkflowRequest(BaseModel):
     input_image: Optional[str] = None  # base64编码的图片数据
