@@ -54,13 +54,13 @@ class StyleTransferWithImageRequest(BaseImageRequest):
     controlnet_end_percent: float = 0.5
     ipadapter_weight_style: float = 1.2
     ipadapter_weight_composition: float = 1.0
-    ksampler1_seed: int = 0
+    ksampler1_seed: int = -1
     ksampler1_steps: int = 20
     ksampler1_cfg: float = 2.0
     ksampler1_sampler_name: str = "dpmpp_3m_sde_gpu"
     ksampler1_scheduler: str = "karras"
     ksampler1_end_at_step: int = 15
-    ksampler2_seed: int = 0
+    ksampler2_seed: int = -1
     ksampler2_steps: int = 20
     ksampler2_cfg: float = 2.0
     ksampler2_sampler_name: str = "euler"

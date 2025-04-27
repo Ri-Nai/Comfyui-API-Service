@@ -480,6 +480,12 @@ def create_style_transfer_workflow(
     return workflow.get_nodes_dict()
 
 
+def seed_value(seed: int) -> int:
+    if seed == -1:
+        return random.randint(0, 1000000)
+    else:
+        return seed
+
 def create_style_transfer_with_image_workflow(
     input_image: str,
     style_image: str,
@@ -496,13 +502,13 @@ def create_style_transfer_with_image_workflow(
     controlnet_end_percent: float = 0.5,  # Exact value from JSON
     ipadapter_weight_style: float = 1.2,
     ipadapter_weight_composition: float = 1.0,
-    ksampler1_seed: int = 0,
+    ksampler1_seed: int = -1,
     ksampler1_steps: int = 20,
     ksampler1_cfg: float = 2.0,
     ksampler1_sampler_name: str = "dpmpp_3m_sde_gpu",
     ksampler1_scheduler: str = "karras",
     ksampler1_end_at_step: int = 15,
-    ksampler2_seed: int = 0,
+    ksampler2_seed: int = -1,
     ksampler2_steps: int = 20,
     ksampler2_cfg: float = 2.0,
     ksampler2_sampler_name: str = "euler",
@@ -569,7 +575,7 @@ def create_style_transfer_with_image_workflow(
     ksampler1 = workflow.create_node(
         KSamplerAdvanced,
         add_noise="enable",
-        noise_seed=ksampler1_seed,
+        noise_seed=seed_value(ksampler1_seed),
         steps=ksampler1_steps,
         cfg=ksampler1_cfg,
         sampler_name=ksampler1_sampler_name,
@@ -581,7 +587,7 @@ def create_style_transfer_with_image_workflow(
     ksampler2 = workflow.create_node(
         KSamplerAdvanced,
         add_noise="disable",  # Uses noise from previous stage
-        noise_seed=ksampler2_seed,
+        noise_seed=seed_value(ksampler2_seed),
         steps=ksampler2_steps,
         cfg=ksampler2_cfg,
         sampler_name=ksampler2_sampler_name,
@@ -648,7 +654,7 @@ def create_style_transfer_with_image_workflow(
 
 if __name__ == "__main__":
     # Example usage for create_style_transfer_workflow
-    with open("D:/Code/tmp/style_transfer_nodes.json", "w") as f:
+    with open("../../style_transfer_nodes.json", "w") as f:
         style_transfer_nodes = create_style_transfer_workflow(
             input_image="input_image.png",
             positive_prompt="beautiful scenery, masterpiece",
@@ -656,12 +662,12 @@ if __name__ == "__main__":
             checkpoint_name="sd_xl_base_1.0.safetensors",
             controlnet_name="control-lora-canny-rank128.safetensors",
             lora_names=["add_detail.safetensors"],
-            seed=12345,
+            seed=-1,
             output_prefix="StyleTransferOutput",
             use_tagger=True,  # Example with tagger
         )
         f.write(json.dumps(style_transfer_nodes, indent=2))
-    with open("D:/Code/tmp/style_image_nodes.json", "w") as f:
+    with open("../../style_image_nodes.json", "w") as f:
         style_image_nodes = create_style_transfer_with_image_workflow(
             input_image="content_image.png",
             style_image="style_ref.png",
