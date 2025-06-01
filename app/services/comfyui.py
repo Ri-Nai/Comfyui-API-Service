@@ -150,7 +150,8 @@ class ComfyUIService:
 
                         if msg_type == "executed":
                             msg_data = data.get("data", {})
-                            outputs.append(msg_data["output"])
+                            if msg_data["output"]:
+                                outputs.append(msg_data["output"])
 
                         if msg_type == "executing":
                             msg_data = data.get("data", {})
