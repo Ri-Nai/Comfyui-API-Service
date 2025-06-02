@@ -61,7 +61,7 @@ async def _execute_workflow(workflow: Dict[str, Any], service: ComfyUIService) -
 # --- API Endpoints ---
 
 @router.post("/tagger", summary="Extract Tags from Image")
-async def tagger_endpoint(request: TaggerRequest):
+async def tagger_endpoint(request: TaggerRequest) -> Dict[str, Any]:
     """接收图片并使用 WD14 Tagger 提取标签。"""
     try:
         logger.info("开始进行标签提取...")
@@ -74,12 +74,15 @@ async def tagger_endpoint(request: TaggerRequest):
         queue_response = await comfyui_service.queue_prompt(workflow)
         prompt_id = queue_response["prompt_id"]
         logger.info(f"成功提交 Tagger 提示，ID: {prompt_id}")
-        await comfyui_service.wait_for_prompt(prompt_id) # 等待完成
-        outputs = await comfyui_service.get_outputs(prompt_id) # 获取原始输出
+        outputs = await comfyui_service.wait_for_prompt(prompt_id) # 等待完成并获取输出
         
-        # 假设 tagger 输出在特定节点的特定字段
-        # 注意：需要根据实际 workflow 输出调整这里的索引和字段名
-        tags = outputs.get("tags", ["Error: Could not find tags in output"])[0] # 从 workflow.py 看，似乎没有直接叫 'tags' 的输出节点名，需要确认
+        # 从输出中提取标签
+        # 查找第一个包含tags字段的输出
+        tags = "No tags found"
+        for output in outputs:
+            if "tags" in output:
+                tags = output["tags"][0]
+                break
 
         return {
             "status": "success",
